@@ -38,8 +38,8 @@
 #include "fsl_lpuart.h"
 
 #include "clock_config.h"
+#include "modmachine.h"
 
-volatile uint32_t systick_ms = 0;
 
 const uint8_t dcd_data[] = { 0x00 };
 
@@ -78,6 +78,17 @@ void board_init(void) {
     // USB1
     //  CLOCK_EnableUsbhs1PhyPllClock(kCLOCK_Usbphy480M, 480000000U);
     //  CLOCK_EnableUsbhs1Clock(kCLOCK_Usb480M, 480000000U);
+
+    // ADC
+    machine_adc_init();
+
+    // PIT
+    machine_timer_init_PIT();
+
+    // SDCard
+    #if MICROPY_PY_MACHINE_SDCARD
+    machine_sdcard_init0();
+    #endif
 }
 
 void USB_OTG1_IRQHandler(void) {

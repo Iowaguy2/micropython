@@ -29,6 +29,7 @@
 
 #include <stdint.h>
 #include "py/obj.h"
+#include "shared/runtime/mpirq.h"
 #include "fsl_gpio.h"
 
 // ------------------------------------------------------------------------------------------------------------------ //
@@ -57,7 +58,8 @@ enum {
 };
 
 enum {
-    PIN_AF_MODE_ALT1 = 1,
+    PIN_AF_MODE_ALT0 = 0,
+    PIN_AF_MODE_ALT1,
     PIN_AF_MODE_ALT2,
     PIN_AF_MODE_ALT3,
     PIN_AF_MODE_ALT4,
@@ -96,9 +98,16 @@ typedef struct {
     mp_obj_base_t base;
     qstr name;  // port name
     uint8_t af_mode;  // alternate function
+    uint8_t input_daisy;
     void *instance;  // pointer to peripheral instance for alternate function
+    uint32_t input_register;
     uint32_t pad_config;  // pad configuration for alternate function
 } machine_pin_af_obj_t;
+
+typedef struct {
+    ADC_Type *instance;
+    uint8_t channel;
+} machine_pin_adc_obj_t;
 
 typedef struct {
     mp_obj_base_t base;
@@ -107,9 +116,17 @@ typedef struct {
     uint32_t pin;  // pin number
     uint32_t muxRegister;
     uint32_t configRegister;
-    size_t af_list_len;  // length of available alternate functions list
-    const machine_pin_af_obj_t *af_list;  // pointer tolist with alternate functions
+    uint8_t af_list_len;  // length of available alternate functions list
+    uint8_t adc_list_len; // length of available ADC options list
+    const machine_pin_af_obj_t *af_list;  // pointer to list with alternate functions
+    const machine_pin_adc_obj_t *adc_list; // pointer to list with ADC options
 } machine_pin_obj_t;
+
+typedef struct _machine_pin_irq_obj_t {
+    mp_irq_obj_t base;
+    uint32_t flags;
+    uint32_t trigger;
+} machine_pin_irq_obj_t;
 
 // ------------------------------------------------------------------------------------------------------------------ //
 
@@ -140,5 +157,6 @@ const machine_pin_obj_t *pin_find_named_pin(const mp_obj_dict_t *named_pins, mp_
 const machine_pin_af_obj_t *pin_find_af(const machine_pin_obj_t *pin, uint8_t fn);
 const machine_pin_af_obj_t *pin_find_af_by_index(const machine_pin_obj_t *pin, mp_uint_t af_idx);
 const machine_pin_af_obj_t *pin_find_af_by_name(const machine_pin_obj_t *pin, const char *name);
+void machine_pin_set_mode(const machine_pin_obj_t *pin, uint8_t mode);
 
 #endif // MICROPY_INCLUDED_MIMXRT_PIN_H
